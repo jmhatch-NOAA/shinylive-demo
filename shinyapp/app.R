@@ -10,7 +10,7 @@ library(plotly)
 ui = page_sidebar(
 
   ## app title
-  title = 'Hourly Weather',
+  title = 'Hourly Weather Forecasts',
 
   ## sidebar
   sidebar = sidebar(
