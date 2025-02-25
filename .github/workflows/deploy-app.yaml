@@ -61,8 +61,8 @@ jobs:
         run: |
           shinylive::export("shinyapp", "site")
           here::here('shinyapp', 'www') |>
-            fs::dir_copy(new_path = here::here('docs'))
-          example_html <- here::here('docs', 'index.html') |>
+            fs::dir_copy(new_path = here::here('site'))
+          example_html <- here::here('site', 'index.html') |>
             readLines()
           example_html[6] = '    <title>NOAA NDBC Data</title>'
           example_out = c(example_html[1:6],
@@ -72,7 +72,7 @@ jobs:
                           '    <link rel="apple-touch-icon" sizes="180x180" href="www/favicon/apple-touch-icon.png" />',
                           '    <link rel="manifest" href="www/favicon/site.webmanifest" />',
                        example_html[7:length(example_html)])
-          writeLines(example_out, here::here('docs', 'index.html'))
+          writeLines(example_out, here::here('site', 'index.html'))
 
       - name: Upload site artifact
         if: github.ref == 'refs/heads/main'
