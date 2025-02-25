@@ -1,32 +1,9 @@
-# Basic example of a GitHub Actions workflow that builds a Shiny app and deploys
-# it to GitHub Pages.
-#
-# The agreed upon contract is:
-#
-# - Inspect the root directory for package dependencies
-# - Install R and the found packages
-# - Export the Shiny app directory to `./site`
-# - On push events, deploy the exported app to GitHub Pages
-#
-# If this contract is not met or could be easily improved for others,
-# please open a new Issue https://github.com/posit-dev/r-shinylive/
-#
-# The _magic_ of this workflow is in the `shinylive::export()` function, which
-# creates a static version of the Shiny app into the folder `./site`.
-# The exported app folder is then uploaded and deployed to GitHub Pages.
-#
-# When deploying to GitHub Pages, be sure to have the appropriate write
-# permissions for your token (`pages` and `id-token`).
-
 name: Deploy app
 
 on:
-  # Manually trigger the workflow
   workflow_dispatch:
-  # Trigger on push to `main` branch
   push:
     branches: ["main"]
-  # Trigger on pull request to all branches (but do not deploy to gh-pages)
   pull_request:
 
 jobs:
@@ -59,7 +36,7 @@ jobs:
       - name: Build site
         shell: Rscript {0}
         run: |
-          shinylive::export("shinyapp", "site")
+          shinylive::export('shinyapp', 'site')
           here::here('shinyapp', 'www') |>
             fs::dir_copy(new_path = here::here('site'))
           example_html <- here::here('site', 'index.html') |>

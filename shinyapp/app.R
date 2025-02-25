@@ -1,26 +1,25 @@
 ## install libraries
 library(shiny)
 library(bslib)
-library(DT)
+library(leaflet)
+library(jsonlite)
+library(sf)
 library(plotly)
-
-## list of buoys owned by NOS
-nos_buoys = c('agxc1', 'baxc1', 'bdrn4', 'bdsp1', 'bgnn6', 'bkbf1', 'blif1', 'bltm3', 'bmtw1', 'brnd1', 'chcm2', 'chyv2', 'covm2', 'cpmw1', 'cpnw1', 'cptr1', 'cpvm2', 'cryv2', 'deld1', 'dmsf1', 'domv2', 'dpxc1', 'ebef1', 'efla1', 'einl1', 'fmoa1', 'frma1', 'frvm3', 'frxm3', 'fskm2', 'fsnm2', 'gctf1', 'hivt2', 'klmw1', 'lndc1', 'lqat2', 'ltjf1', 'mbpa1', 'mcga1', 'mhbt2', 'mhrn6', 'mnpv2', 'mrcp1', 'mtbf1', 'mzxc1', 'nbgm3', 'nblp1', 'nfdf1', 'nwhc3', 'obxc1', 'okxc1', 'omhc1', 'optf1', 'pdvr1', 'pegf1', 'pfdc1', 'pfxc1', 'pill1', 'pmaf1', 'pptm2', 'ppxc1', 'prhh1', 'prjc1', 'prur1', 'psbc1', 'psxc1', 'ptbm6', 'ptcr1', 'ptoa1', 'pvdr1', 'pxac1', 'pxoc1', 'pxsc1', 'qptr1', 'rcmc1', 'robn4', 'rplv2', 'rtyc1', 'seim1', 'sjsn4', 'skcf1', 'swpm4', 'tcbm2', 'tcmw1', 'tcnw1', 'tlvt2', 'tpaf1', 'tshf1', 'txvt2', 'upbc1', 'utvt2', 'vtbt2', 'wdsv2', 'ykrv2')
 
 ## ui
 ui = page_sidebar(
 
-  ## tags
-  window_title = 'NOAA NDBC Data',
-
   ## app title
-  title = 'NOS Stations',
+  title = 'Hourly Weather',
 
   ## sidebar
   sidebar = sidebar(
 
-    ## selector for buoy id
-    selectInput(inputId = 'buoy', label = 'Buoy ID:', choices = nos_buoys),
+    ## display selected coordinates
+    p("Selected longitude:"),
+    textOutput(outputId ="lon"),
+    p("Selected latitude:"),
+    textOutput(outputId ="lat"),
 
     ## action button
     actionButton(inputId = 'query', label = 'Run')
@@ -29,8 +28,8 @@ ui = page_sidebar(
 
   ## output table
   navset_card_underline(
-    nav_panel("Table", dataTableOutput("table")),
-    nav_panel("Plot", plotlyOutput("plot"))
+    nav_panel("Map", leafletOutput("map")),
+    nav_panel("Forecast", plotlyOutput("plot"))
   )
 
 )
@@ -38,56 +37,62 @@ ui = page_sidebar(
 ## server
 server = function(input, output, session) {
 
-  ## buoy data
-  buoyData = reactiveValues(data = NULL)
+  ## Preparing variable to store longitude and latitude
+  coordinates <- reactiveValues(latitude = NULL, longitude = NULL, name = NULL, hourly_data = NULL)
+
+  ## Leaflet map output
+  output$map = renderLeaflet({
+    leaflet() |>
+      addTiles() |>
+      setView(lng = -70.9277, lat = 41.6341, zoom = 10)
+  })
+
+  ## Capture map click
+  observeEvent(input$map_click, {
+    click = input$map_click
+    if (!is.null(click)) {
+      coordinates$latitude = click$lat
+      coordinates$longitude = click$lng
+      output$lon = renderText({ coordinates$longitude })
+      output$lat = renderText({ coordinates$latitude })
+    }
+  })
 
   ## query data
   observeEvent(input$query, {
 
+    ## data url
+    data_url = paste0('https://api.weather.gov/points/', coordinates$latitude, ',', coordinates$longitude)
+
     ## url
-    data_url = paste0('https://www.ndbc.noaa.gov/data/realtime2/', toupper(input$buoy), '.txt')
+    nws_data = fromJSON(data_url)
+    coordinates$name = paste0(nws_data$properties$relativeLocation$properties$city, ', ', nws_data$properties$relativeLocation$properties$state)
 
-    ## test
-    test_url = try(download.file(data_url, destfile = basename(data_url)), silent = TRUE)
+    ## hourly forecast
+    hourly_data = fromJSON(nws_data$properties$forecastHourly)
+    coordinates$hourly_data = hourly_data$properties$periods
 
-    ## query
-    if (class(test_url) != "try-error") {
+    ## bounding box
+    bb = data.frame(x = hourly_data$geometry$coordinates[,,1], y = hourly_data$geometry$coordinates[,,2]) |>
+      sf::st_as_sf(coords = c('x', 'y'), crs = 4326) |>
+      summarise(geometry = st_combine(geometry)) |>
+      sf::st_cast('POLYGON')
 
-      ## data
-      buoyData$data = basename(data_url) |>
-        read.table() |>
-        subset(V14 != 'MM')
-
-      ## add date
-      buoyData$data$DATE = paste0(buoyData$data$V1, '-', buoyData$data$V2, '-', buoyData$data$V3, ' ', buoyData$data$V4, ':', buoyData$data$V5) |>
-        as.POSIXct()
-
-      ## fix column names
-      # units: yr mo dy hr mn degT m/s m/s m sec sec degT hPa degC degC degC nmi hPa ft
-      colnames(buoyData$data) = c('YY', 'MM', 'DD', 'hh', 'mm', 'WDIR', 'WSPD', 'GST', 'WVHT', 'DPD', 'APD', 'MWD', 'PRES', 'ATMP', 'WTMP', 'DEWP', 'VIS', 'PTDY', 'TIDE', 'DATE')
-
-
-    } else {
-
-      buoyData$data = data.frame()
-
-    }
+    ## modify map
+    leafletProxy("map") |>
+      addPolygons(data = bb)
 
   })
-
-  ## display table
-  output$table = renderDataTable(buoyData$data, options = list(pageLength = 15))
 
   ## display plot
   output$plot = renderPlotly({
 
     ## plotly
-    plot_ly(buoyData$data, type = 'scatter', mode = 'lines') |>
-      add_trace(x = ~DATE, y = ~as.numeric(ATMP)) |>
-      layout(showlegend = FALSE, title = paste0('Buoy ', input$buoy), xaxis = list(title = 'Date'), yaxis = list(title = 'Air Temperature (degrees C)'))
+    plot_ly(coordinates$hourly_data, type = 'scatter', mode = 'lines') |>
+      add_trace(x = ~startTime, y = ~temperature) |>
+      layout(showlegend = FALSE, title = coordinates$name, xaxis = list(title = 'Date'), yaxis = list(title = 'Air Temperature (degrees F)'))
 
   })
-
 }
 
 ## Shiny app
