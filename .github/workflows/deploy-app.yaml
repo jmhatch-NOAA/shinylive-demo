@@ -21,12 +21,13 @@
 name: Deploy app
 
 on:
-  workflow_call:
-    inputs:
-      cache-version:
-        type: string
-        default: "1"
-        required: false
+  # Manually trigger the workflow
+  workflow_dispatch:
+  # Trigger on push to `main` branch
+  push:
+    branches: ["main"]
+  # Trigger on pull request to all branches (but do not deploy to gh-pages)
+  pull_request:
 
 jobs:
   build:
