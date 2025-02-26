@@ -30,7 +30,11 @@ ui = page_sidebar(
   ## output table
   navset_card_underline(
     nav_panel("Map", leafletOutput("map")),
-    nav_panel("Forecast", plotlyOutput("plot"))
+    nav_panel("Forecast",
+              plotlyOutput("atmpPlot"),
+              plotlyOutput("precipPlot"),
+              plotlyOutput("dewPlot")
+      )
   )
 
 )
@@ -91,8 +95,8 @@ server = function(input, output, session) {
 
   })
 
-  ## display plot
-  output$plot = renderPlotly({
+  ## display plots
+  output$atmpPlot = renderPlotly({
 
     ## plotly
     plot_ly(coordinates$hourly_data, type = 'scatter', mode = 'lines') |>
@@ -100,6 +104,23 @@ server = function(input, output, session) {
       layout(showlegend = FALSE, title = coordinates$name, xaxis = list(title = 'Date'), yaxis = list(title = 'Air Temperature (degrees F)'))
 
   })
+  output$precipPlot = renderPlotly({
+
+    ## plotly
+    plot_ly(coordinates$hourly_data, type = 'scatter', mode = 'lines') |>
+      add_trace(x = ~startTime, y = ~probabilityOfPrecipitation) |>
+      layout(showlegend = FALSE, xaxis = list(title = 'Date'), yaxis = list(title = 'Percent (%)'))
+
+  })
+  output$dewPlot = renderPlotly({
+
+    ## plotly
+    plot_ly(coordinates$hourly_data, type = 'scatter', mode = 'lines') |>
+      add_trace(x = ~startTime, y = ~dewpoint) |>
+      layout(showlegend = FALSE, xaxis = list(title = 'Date'), yaxis = list(title = 'Dewpoint (degrees C)'))
+
+  })
+
 }
 
 ## Shiny app
