@@ -30,7 +30,7 @@ ui = page_sidebar(
   ## output plots
   navset_card_underline(
     nav_panel("Map", leafletOutput("map")),
-    nav_panel("Forecast",
+    nav_panel("Forecasts",
               plotlyOutput("atmpPlot"),
               plotlyOutput("precipPlot"),
               plotlyOutput("dewPlot")
@@ -101,7 +101,7 @@ server = function(input, output, session) {
     ## plotly
     plot_ly(coordinates$hourly_data, type = 'scatter', mode = 'lines') |>
       add_trace(x = ~startTime, y = ~temperature) |>
-      layout(showlegend = FALSE, title = coordinates$name, xaxis = list(title = 'Date'), yaxis = list(title = 'Air Temperature (degrees F)'))
+      layout(showlegend = FALSE, title = coordinates$name, xaxis = list(title = ''), yaxis = list(title = 'Air Temperature (degrees F)'))
 
   })
   output$precipPlot = renderPlotly({
@@ -109,7 +109,7 @@ server = function(input, output, session) {
     ## plotly
     plot_ly(coordinates$hourly_data, type = 'scatter', mode = 'lines') |>
       add_trace(x = ~startTime, y = ~probabilityOfPrecipitation$value, line = list(color = 'rgb(205, 12, 24)')) |>
-      layout(showlegend = FALSE, xaxis = list(title = 'Date'), yaxis = list(title = 'Percent precipitation (%)'))
+      layout(showlegend = FALSE, xaxis = list(title = ''), yaxis = list(title = 'Percent precipitation (%)'))
 
   })
   output$dewPlot = renderPlotly({
