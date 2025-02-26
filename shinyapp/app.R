@@ -27,7 +27,7 @@ ui = page_sidebar(
 
   ),
 
-  ## output table
+  ## output plots
   navset_card_underline(
     nav_panel("Map", leafletOutput("map")),
     nav_panel("Forecast",
@@ -42,17 +42,17 @@ ui = page_sidebar(
 ## server
 server = function(input, output, session) {
 
-  ## Preparing variable to store longitude and latitude
+  ## store longitude and latitude
   coordinates <- reactiveValues(latitude = NULL, longitude = NULL, name = NULL, hourly_data = NULL)
 
-  ## Leaflet map output
+  ## leaflet map output
   output$map = renderLeaflet({
     leaflet() |>
       addTiles() |>
       setView(lng = -70.9277, lat = 41.6341, zoom = 10)
   })
 
-  ## Capture map click
+  ## capture map click
   observeEvent(input$map_click, {
     click = input$map_click
     if (!is.null(click)) {
@@ -69,7 +69,7 @@ server = function(input, output, session) {
     ## data url
     data_url = paste0('https://api.weather.gov/points/', coordinates$latitude, ',', coordinates$longitude)
 
-    ## url
+    ## data
     nws_data = fromJSON(data_url)
     coordinates$name = paste0(nws_data$properties$relativeLocation$properties$city, ', ', nws_data$properties$relativeLocation$properties$state)
 
@@ -108,15 +108,15 @@ server = function(input, output, session) {
 
     ## plotly
     plot_ly(coordinates$hourly_data, type = 'scatter', mode = 'lines') |>
-      add_trace(x = ~startTime, y = ~probabilityOfPrecipitation) |>
-      layout(showlegend = FALSE, xaxis = list(title = 'Date'), yaxis = list(title = 'Percent (%)'))
+      add_trace(x = ~startTime, y = ~probabilityOfPrecipitation$value, line = list(color = 'rgb(205, 12, 24)')) |>
+      layout(showlegend = FALSE, xaxis = list(title = 'Date'), yaxis = list(title = 'Percent precipitation (%)'))
 
   })
   output$dewPlot = renderPlotly({
 
     ## plotly
     plot_ly(coordinates$hourly_data, type = 'scatter', mode = 'lines') |>
-      add_trace(x = ~startTime, y = ~dewpoint) |>
+      add_trace(x = ~startTime, y = ~dewpoint$value, line = list(color = 'rgb(22, 96, 167)')) |>
       layout(showlegend = FALSE, xaxis = list(title = 'Date'), yaxis = list(title = 'Dewpoint (degrees C)'))
 
   })
