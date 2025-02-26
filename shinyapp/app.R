@@ -108,8 +108,8 @@ server = function(input, output, session) {
 
     ## plotly
     plot_ly(coordinates$hourly_data, type = 'scatter', mode = 'lines') |>
-      add_trace(x = ~startTime, y = ~temperature) |>
-      layout(showlegend = FALSE, title = coordinates$name, xaxis = list(title = ''), yaxis = list(title = 'Air Temperature (degrees F)'))
+      add_trace(x = ~startTime, y = ~probabilityOfPrecipitation$value, line = list(color = 'rgb(205, 12, 24)')) |>
+      layout(showlegend = FALSE, xaxis = list(title = ''), yaxis = list(title = 'Percent precipitation (%)'))
 
   })
   output$dewPlot = renderPlotly({
