@@ -4,6 +4,7 @@ library(bslib)
 library(leaflet)
 library(jsonlite)
 library(sf)
+sf_use_s2(FALSE)
 library(plotly)
 
 ## ui
@@ -78,9 +79,15 @@ server = function(input, output, session) {
       summarise(geometry = st_combine(geometry)) |>
       sf::st_cast('POLYGON')
 
+    ## bb coordinates
+    bb_coords = bb |>
+      st_buffer(dist = 0.001) |>
+      st_coordinates()
+
     ## modify map
     leafletProxy("map") |>
-      addPolygons(data = bb)
+      addPolygons(data = bb) |>
+      fitBounds(lng1 = min(bb_coords[, 'X']), lat1 = min(bb_coords[, 'Y']), lng2 = max(bb_coords[, 'X']), lat2 = max(bb_coords[, 'Y']))
 
   })
 
