@@ -11,7 +11,7 @@ library(plotly)
 ui = page_sidebar(
 
   ## fix for issue with multiple plotly plots
-  header = tags$script(src = "https://cdn.plot.ly/plotly-3.0.0.min.js"),
+  tags$script(src = "https://cdn.plot.ly/plotly-3.0.0.min.js"),
 
   ## app title
   title = 'Hourly Weather Forecasts',
