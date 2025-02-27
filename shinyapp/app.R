@@ -6,6 +6,7 @@ library(jsonlite)
 library(sf)
 sf_use_s2(FALSE)
 library(plotly)
+library(crosstalk)
 
 ## ui
 ui = page_sidebar(
