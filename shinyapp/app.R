@@ -10,9 +10,6 @@ library(plotly)
 ## ui
 ui = page_sidebar(
 
-  ## fix for issue with multiple plotly plots
-  tags$script(src = "https://cdn.plot.ly/plotly-3.0.0.min.js"),
-
   ## app title
   title = 'Hourly Weather Forecasts',
 
@@ -38,7 +35,10 @@ ui = page_sidebar(
               plotlyOutput("precipPlot"),
               plotlyOutput("dewPlot")
       )
-  )
+  ),
+
+  ## fix for issue with multiple plotly plots
+  footer = tags$script(src = "https://cdn.plot.ly/plotly-3.0.0.min.js")
 
 )
 
